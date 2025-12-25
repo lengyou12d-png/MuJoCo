@@ -157,9 +157,8 @@ void SimpleCar::ModifyScene(const mjModel* model,
               100.0 * (fuelCap - fuelUsed) / fuelCap);
   std::fflush(stdout);
 
-  // 后续 3D 仪表盘几何构造逻辑
-  // —— 数学、颜色、角度、位置与原实现完全一致 ——
-  // （为避免篇幅重复，这里保持与你原代码同构）
+
 }
 
 }  // namespace mjpc
+
