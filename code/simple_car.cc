@@ -16,16 +16,18 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 #include <absl/random/random.h>
 #include <mujoco/mujoco.h>
+
 #include "mjpc/task.h"
 #include "mjpc/utilities.h"
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/freeglut.h>
-
 
 namespace mjpc {
 
@@ -33,267 +35,201 @@ namespace mjpc {
         return GetModelPath("simple_car/task.xml");
     }
 
-    std::string SimpleCar::Name() const { return "SimpleCar"; }
+    std::string SimpleCar::Name() const {
+        return "SimpleCar";
+    }
 
-    float speed = 0.0f;  // å½“å‰è½¦é€Ÿï¼ˆkm/hï¼‰
+ 
+    // OpenGL ÒÇ±íÅÌ
+    static float g_speed_kmh = 0.0f;
 
-
-    // ç»˜åˆ¶åœ†å½¢è¾¹æ¡†
+    // ÍâÔ²
     void SimpleCar::drawCircle(float radius, int segments) {
         glBegin(GL_LINE_LOOP);
-        for (int i = 0; i < segments; i++) {
-            float angle = 2 * M_PI * i / segments;
-            glVertex2f(radius * cos(angle), radius * sin(angle));
+        for (int i = 0; i < segments; ++i) {
+            float a = 2.0f * M_PI * i / segments;
+            glVertex2f(radius * cos(a), radius * sin(a));
         }
         glEnd();
     }
 
-    void SimpleCar::drawTicks(float radius, int tickCount) {
-        float angleStep = 180.0f / tickCount;  // å› ä¸ºæ˜¯åŠåœ†ï¼Œåˆ»åº¦åˆ†å¸ƒåœ¨180åº¦å†…
-        for (int i = 0; i < tickCount; i++) {
-            float angle = i * angleStep * M_PI / 180.0f;
-            float tickLength = 0.02f;
-            float x1 = radius * cos(angle);
-            float y1 = radius * sin(angle);
-            float x2 = (radius - tickLength) * cos(angle);
-            float y2 = (radius - tickLength) * sin(angle);
+    // ¿Ì¶ÈÏß
+    void SimpleCar::drawTicks(float radius, int count) {
+        const float step = 180.0f / count;
+        for (int i = 0; i < count; ++i) {
+            float a = step * i * M_PI / 180.0f;
+            float len = 0.02f;
 
             glBegin(GL_LINES);
-            glVertex2f(x1, y1);
-            glVertex2f(x2, y2);
+            glVertex2f(radius * cos(a), radius * sin(a));
+            glVertex2f((radius - len) * cos(a), (radius - len) * sin(a));
             glEnd();
         }
     }
 
-    // ç»˜åˆ¶é€Ÿåº¦æŒ‡é’ˆ
+    // Ö¸Õë
     void SimpleCar::drawPointer(float angle) {
         glBegin(GL_LINES);
-        glVertex2f(0.0f, 0.0f);  // æŒ‡é’ˆçš„æ ¹éƒ¨
-        glVertex2f(0.8f * cos(angle), 0.8f * sin(angle));  // æŒ‡é’ˆçš„å°–ç«¯
+        glVertex2f(0.0f, 0.0f);
+        glVertex2f(0.8f * cos(angle), 0.8f * sin(angle));
         glEnd();
     }
 
-    // ç»˜åˆ¶æ•°å­—
-    void SimpleCar::drawNumber(float radius, int number, float angle) {
-        char buffer[10];
-        snprintf(buffer, sizeof(buffer), "%d", number);
+    // Êı×Ö
+    void SimpleCar::drawNumber(float radius, int num, float angle) {
+        char buf[8];
+        std::snprintf(buf, sizeof(buf), "%d", num);
         glRasterPos2f(radius * cos(angle), radius * sin(angle));
-        for (int i = 0; buffer[i] != '\0'; i++) {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buffer[i]);
+        for (int i = 0; buf[i]; ++i) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buf[i]);
         }
     }
 
-    // ç»˜åˆ¶ä»ªè¡¨ç›˜
-    void SimpleCar::drawDashboard(float* dashboard_pos, float speed_ratio) {
+    // ÒÇ±íÅÌÕûÌå»æÖÆ
+    void SimpleCar::drawDashboard(float* pos, float ratio) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // å°†ä»ªè¡¨ç›˜ç§»åŠ¨åˆ°æ­£ç¡®çš„ä½ç½®
         glPushMatrix();
-        glTranslatef(dashboard_pos[0], dashboard_pos[1], dashboard_pos[2]);
+        glTranslatef(pos[0], pos[1], pos[2]);
 
-        // ç»˜åˆ¶å¤–åœˆï¼ˆä»ªè¡¨ç›˜åœ†å½¢ï¼‰
-        glColor3f(0.1f, 0.1f, 0.1f);  // æ·±ç°è‰²è¾¹æ¡†
+        glColor3f(0.1f, 0.1f, 0.1f);
         drawCircle(0.6f, 100);
 
-        // ç»˜åˆ¶åˆ»åº¦çº¿ï¼ˆ0, 2, 4, 6, 8, 10 å…±6ä¸ªåˆ»åº¦ï¼‰
-        glColor3f(1.0f, 1.0f, 1.0f);  // ç™½è‰²åˆ»åº¦çº¿
-        drawTicks(0.5f, 10);  // æ€»å…±ç»˜åˆ¶10ä¸ªåˆ»åº¦
+        glColor3f(1.0f, 1.0f, 1.0f);
+        drawTicks(0.5f, 10);
 
-        // ç»˜åˆ¶é€Ÿåº¦æŒ‡é’ˆ
-        float pointerAngle = (90.0f - (180.0f * speed_ratio)) * M_PI / 180.0f;  // æ ¹æ®è½¦é€Ÿè®¡ç®—è§’åº¦
-        glColor3f(1.0f, 0.0f, 0.0f);  // çº¢è‰²æŒ‡é’ˆ
-        drawPointer(pointerAngle);
+        float angle = (90.0f - 180.0f * ratio) * M_PI / 180.0f;
+        glColor3f(1.0f, 0.0f, 0.0f);
+        drawPointer(angle);
 
-        // ç»˜åˆ¶åˆ»åº¦æ•°å­—ï¼ˆ0, 1, 2, ..., 10ï¼‰
-        for (int i = 0; i <= 10; i++) {
-            float angle = (90.0f - 18.0f * i) * M_PI / 180.0f;
-            drawNumber(0.45f, i, angle);
+        for (int i = 0; i <= 10; ++i) {
+            float a = (90.0f - 18.0f * i) * M_PI / 180.0f;
+            drawNumber(0.45f, i, a);
         }
 
-        // ç»˜åˆ¶"km/h"å•ä½
-        glColor3f(0.9f, 0.9f, 0.9f);
         glRasterPos2f(0.0f, -0.7f);
         const char* unit = "km/h";
-        for (int i = 0; unit[i] != '\0'; i++) {
+        for (int i = 0; unit[i]; ++i) {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, unit[i]);
         }
 
-        // ç»˜åˆ¶å½“å‰é€Ÿåº¦å€¼
-        glColor3f(0.9f, 0.9f, 0.9f);
-        char speedStr[50];
-        snprintf(speedStr, sizeof(speedStr), "%.1f", speed);
+        char buf[16];
+        std::snprintf(buf, sizeof(buf), "%.1f", g_speed_kmh);
         glRasterPos2f(-0.1f, 0.0f);
-        for (int i = 0; speedStr[i] != '\0'; i++) {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, speedStr[i]);
+        for (int i = 0; buf[i]; ++i) {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, buf[i]);
         }
 
-        // æ¢å¤çŠ¶æ€
         glPopMatrix();
         glutSwapBuffers();
     }
 
-
-    // ------- Residuals for simple_car task ------
-    //     Position: Car should reach goal position (x, y)
-    //     Control:  Controls should be small
-    // ------------------------------------------
-    void SimpleCar::ResidualFn::Residual(const mjModel* model, const mjData* data,
+    // ------------------------------------------------------------
+    // Residual
+    // ------------------------------------------------------------
+    void SimpleCar::ResidualFn::Residual(
+        const mjModel* model,
+        const mjData* data,
         double* residual) const {
-        // ---------- Position (x, y) ----------
-        // Goal position from mocap body
-        residual[0] = data->qpos[0] - data->mocap_pos[0];  // x position
-        residual[1] = data->qpos[1] - data->mocap_pos[1];  // y position
 
-        // ---------- Control ----------
-        residual[2] = data->ctrl[0];  // forward control
-        residual[3] = data->ctrl[1];  // turn control
+        residual[0] = data->qpos[0] - data->mocap_pos[0];
+        residual[1] = data->qpos[1] - data->mocap_pos[1];
+        residual[2] = data->ctrl[0];
+        residual[3] = data->ctrl[1];
     }
 
-    // -------- Transition for simple_car task --------
-    //   If car is within tolerance of goal ->
-    //   move goal randomly.
-    // ------------------------------------------------
+    // ------------------------------------------------------------
+    // Transition
+    // ------------------------------------------------------------
     void SimpleCar::TransitionLocked(mjModel* model, mjData* data) {
-        // Car position (x, y)
-        double car_pos[2] = { data->qpos[0], data->qpos[1] };
+        double car[2] = { data->qpos[0], data->qpos[1] };
+        double goal[2] = { data->mocap_pos[0], data->mocap_pos[1] };
 
-        // Goal position from mocap
-        double goal_pos[2] = { data->mocap_pos[0], data->mocap_pos[1] };
+        double diff[2];
+        mju_sub(diff, goal, car, 2);
 
-        // Distance to goal
-        double car_to_goal[2];
-        mju_sub(car_to_goal, goal_pos, car_pos, 2);
-
-        // If within tolerance, move goal to random position
-        if (mju_norm(car_to_goal, 2) < 0.2) {
-            absl::BitGen gen_;
-            data->mocap_pos[0] = absl::Uniform<double>(gen_, -2.0, 2.0);
-            data->mocap_pos[1] = absl::Uniform<double>(gen_, -2.0, 2.0);
-            data->mocap_pos[2] = 0.01;  // keep z at ground level
+        if (mju_norm(diff, 2) < 0.2) {
+            absl::BitGen gen;
+            data->mocap_pos[0] = absl::Uniform<double>(gen, -2.0, 2.0);
+            data->mocap_pos[1] = absl::Uniform<double>(gen, -2.0, 2.0);
+            data->mocap_pos[2] = 0.01;
         }
     }
 
-    // draw task-related geometry in the scene
-    // æ”¹è¿›åçš„ç«‹å¼ä»ªè¡¨ç›˜ï¼Œæ”¾ç½®åœ¨æ±½è½¦æ­£ä¸Šæ–¹
-
-    void SimpleCar::ModifyScene(const mjModel* model, const mjData* data,
+    // ------------------------------------------------------------
+    // Scene »æÖÆ
+    // ------------------------------------------------------------
+    void SimpleCar::ModifyScene(
+        const mjModel* model,
+        const mjData* data,
         mjvScene* scene) const {
 
-        //æ‰“å°è½¦å­ä¿¡æ¯
-        // ===== åŸåœ°æ‰“å°ï¼šä½ç½® / é€Ÿåº¦ / åŠ é€Ÿåº¦ / è½¬é€Ÿæ¡ =====
-    // ===== æ²¹è€—ç»Ÿè®¡ï¼ˆç´¯è®¡ï¼‰=====
-        static double fuel_capacity = 100.0;   // æ»¡æ²¹ = 100 å•ä½
-        static double fuel_used = 0.0;    // ç´¯è®¡æ²¹è€—ï¼ˆä»»æ„å•ä½ï¼‰
+        static double fuel_cap = 100.0;
+        static double fuel_used = 0.0;
 
-        // 1. ä½ç½®
         double pos_x = data->qpos[0];
         double pos_y = data->qpos[1];
-
-        // 2. é€Ÿåº¦
         double vel_x = data->qvel[0];
         double vel_y = data->qvel[1];
-
-        // 3. åŠ é€Ÿåº¦
         double acc_x = data->qacc[0];
         double acc_y = data->qacc[1];
 
-        // 4. è½¦ä½“é€Ÿåº¦ï¼ˆç”¨äºè½¬é€Ÿï¼‰
-        double* car_velocity = SensorByName(model, data, "car_velocity");
-        double speed_ms = car_velocity ? mju_norm3(car_velocity) : 0.0;
+        double* vel = SensorByName(model, data, "car_velocity");
+        double speed_ms = vel ? mju_norm3(vel) : 0.0;
 
-        // 5. è½¬é€Ÿæ¡ï¼ˆ30 ä¸ª #ï¼‰
-        const int BAR_LEN = 30;
-        const double max_speed_ref = 5.0;   // å‚è€ƒæœ€å¤§é€Ÿåº¦
-        double rpm_ratio = speed_ms / max_speed_ref;
-        if (rpm_ratio > 1.0) rpm_ratio = 1.0;
-        if (rpm_ratio < 0.0) rpm_ratio = 0.0;
+        const double max_ref = 5.0;
+        double rpm_ratio = speed_ms / max_ref;
+        rpm_ratio = std::fmin(1.0, std::fmax(0.0, rpm_ratio));
 
-        int filled = static_cast<int>(rpm_ratio * BAR_LEN);
-
-        char rpm_bar[BAR_LEN + 1];
-        for (int i = 0; i < BAR_LEN; i++) {
-            rpm_bar[i] = (i < filled) ? '#' : ' ';
-        }
-        rpm_bar[BAR_LEN] = '\0';
-
+        char bar[31];
+        int filled = static_cast<int>(rpm_ratio * 30);
+        for (int i = 0; i < 30; ++i) bar[i] = (i < filled) ? '#' : ' ';
+        bar[30] = '\0';
 
         double dt = model->opt.timestep;
+        fuel_used += 0.2 * std::abs(data->ctrl[0]) * dt;
+        fuel_used = std::fmin(fuel_used, fuel_cap);
 
-        // æ²¹é—¨æ§åˆ¶ï¼ˆå‰è¿›æ§åˆ¶ï¼‰
-        double throttle = data->ctrl[0];
+        double fuel_pct = 100.0 * (fuel_cap - fuel_used) / fuel_cap;
 
-        // æ²¹è€—ç³»æ•°ï¼ˆå¯åœ¨å®éªŒä¸­è¯´æ˜ï¼‰
-        const double fuel_coeff = 0.2;
-
-        // ç´¯è®¡æ²¹è€—
-        fuel_used += fuel_coeff * std::abs(throttle) * dt;
-
-        // ä¸å…è®¸è¶…è¿‡æ²¹ç®±å®¹é‡
-        if (fuel_used > fuel_capacity) {
-            fuel_used = fuel_capacity;
-        }
-        double fuel_left = fuel_capacity - fuel_used;
-        double fuel_percent = (fuel_left / fuel_capacity) * 100.0;
-
-        // é˜²æ­¢æ•°å€¼å¼‚å¸¸
-        if (fuel_percent < 0.0) fuel_percent = 0.0;
-        if (fuel_percent > 100.0) fuel_percent = 100.0;
-
-
-
-        // 6. åŸåœ°æ‰“å°ï¼ˆæ³¨æ„ï¼š%s å¯¹åº” rpm_barï¼‰
         printf(
-            "\rPos(%.2f, %.2f) | "
-            "Vel(%.2f, %.2f) | "
-            "Acc(%.2f, %.2f) | "
-            "Fuel %3.0f%%"
-            "RPM [%s",
-            pos_x, pos_y,
-            vel_x, vel_y,
-            acc_x, acc_y,
-            fuel_percent,
-            rpm_bar
-        );
-
-        // å¼ºåˆ¶åˆ·æ–°
+            "\rPos(%.2f, %.2f) | Vel(%.2f, %.2f) | Acc(%.2f, %.2f) | Fuel %3.0f%% RPM [%s]",
+            pos_x, pos_y, vel_x, vel_y, acc_x, acc_y, fuel_pct, bar);
         fflush(stdout);
 
-
-
-
-        // è·å–æ±½è½¦è½¦èº«ID
+        // »ñÈ¡Æû³µ³µÉíID
         int car_body_id = mj_name2id(model, mjOBJ_BODY, "car");
-        if (car_body_id < 0) return;  // æ±½è½¦è½¦èº«æœªæ‰¾åˆ°
+        if (car_body_id < 0) return;  // Æû³µ³µÉíÎ´ÕÒµ½
 
-        // ä»ä¼ æ„Ÿå™¨è·å–æ±½è½¦çº¿é€Ÿåº¦
+        // ´Ó´«¸ĞÆ÷»ñÈ¡Æû³µÏßËÙ¶È
 
-        if (!car_velocity) return;  // ä¼ æ„Ÿå™¨æœªæ‰¾åˆ°
+        if (!car_velocity) return;  // ´«¸ĞÆ÷Î´ÕÒµ½
 
-        // è®¡ç®—é€Ÿåº¦ï¼ˆé€Ÿåº¦å‘é‡çš„å¤§å°ï¼‰
+        // ¼ÆËãËÙ¶È£¨ËÙ¶ÈÏòÁ¿µÄ´óĞ¡£©
 
-        double speed_kmh = speed_ms * 3.6;  // å°†m/sè½¬æ¢ä¸ºkm/h
+        double speed_kmh = speed_ms * 3.6;  // ½«m/s×ª»»Îªkm/h
 
-        // è·å–æ±½è½¦ä½ç½®
+        // »ñÈ¡Æû³µÎ»ÖÃ
         double* car_pos = data->xpos + 3 * car_body_id;
 
-        // ä»ªè¡¨ç›˜ä½ç½®ï¼ˆæ±½è½¦æ­£å‰æ–¹ï¼Œç«‹èµ·æ¥ï¼‰
+        // ÒÇ±íÅÌÎ»ÖÃ£¨Æû³µÕıÇ°·½£¬Á¢ÆğÀ´£©
         float dashboard_pos[3] = {
           static_cast<float>(car_pos[0]),
-          static_cast<float>(car_pos[1]),  // æ±½è½¦å‰æ–¹0.5ç±³
-          static_cast<float>(car_pos[2] + 0.3f)   // åœ°é¢ä¸Šæ–¹0.3ç±³
+          static_cast<float>(car_pos[1]),  // Æû³µÇ°·½0.5Ã×
+          static_cast<float>(car_pos[2] + 0.3f)   // µØÃæÉÏ·½0.3Ã×
         };
-        const float gauge_scale = 1.0f;  // ä»ªè¡¨ç›˜æ•´ä½“æ”¾å¤§ 2 å€ï¼ˆç›´å¾„ Ã—2ï¼‰
+        const float gauge_scale = 1.0f;  // ÒÇ±íÅÌÕûÌå·Å´ó 2 ±¶£¨Ö±¾¶ ¡Á2£©
 
 
-        // æœ€å¤§é€Ÿåº¦å‚è€ƒå€¼ï¼ˆkm/hï¼‰ï¼Œæ ¹æ®è¦æ±‚æ˜¯0-10
+        // ×î´óËÙ¶È²Î¿¼Öµ£¨km/h£©£¬¸ù¾İÒªÇóÊÇ0-10
         const float max_speed_kmh = 10.0f;
 
-        // é€Ÿåº¦ç™¾åˆ†æ¯”ï¼ˆ0-1ï¼‰
+        // ËÙ¶È°Ù·Ö±È£¨0-1£©
         float speed_ratio = static_cast<float>(speed_kmh) / max_speed_kmh;
         if (speed_ratio > 1.0f) speed_ratio = 1.0f;
 
-        // ä»ªè¡¨ç›˜æ—‹è½¬çŸ©é˜µï¼ˆç»•Xè½´æ—‹è½¬90åº¦ï¼Œå†é¡ºæ—¶é’ˆæ—‹è½¬90åº¦ï¼‰
-        double angle_x = 90.0 * 3.14159 / 180.0;  // ç»•Xè½´æ—‹è½¬90åº¦ï¼ˆç«‹èµ·æ¥ï¼‰
+        // ÒÇ±íÅÌĞı×ª¾ØÕó£¨ÈÆXÖáĞı×ª90¶È£¬ÔÙË³Ê±ÕëĞı×ª90¶È£©
+        double angle_x = 90.0 * 3.14159 / 180.0;  // ÈÆXÖáĞı×ª90¶È£¨Á¢ÆğÀ´£©
         double cos_x = cos(angle_x);
         double sin_x = sin(angle_x);
         double mat_x[9] = {
@@ -302,7 +238,7 @@ namespace mjpc {
           0, sin_x,  cos_x
         };
 
-        double angle_z = -90.0 * 3.14159 / 180.0;  // ç»•Zè½´æ—‹è½¬-90åº¦ï¼ˆé¡ºæ—¶é’ˆï¼‰
+        double angle_z = -90.0 * 3.14159 / 180.0;  // ÈÆZÖáĞı×ª-90¶È£¨Ë³Ê±Õë£©
         double cos_z = cos(angle_z);
         double sin_z = sin(angle_z);
         double mat_z[9] = {
@@ -311,7 +247,7 @@ namespace mjpc {
           0,      0,     1
         };
 
-        // ç»„åˆæ—‹è½¬çŸ©é˜µï¼šå…ˆç»•Xè½´æ—‹è½¬90Â°ï¼Œå†ç»•Zè½´é¡ºæ—¶é’ˆæ—‹è½¬90Â°
+        // ×éºÏĞı×ª¾ØÕó£ºÏÈÈÆXÖáĞı×ª90¡ã£¬ÔÙÈÆZÖáË³Ê±ÕëĞı×ª90¡ã
         double dashboard_rot_mat[9];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -322,34 +258,34 @@ namespace mjpc {
             }
         }
 
-        // 1. ä»ªè¡¨ç›˜å¤–åœ†ç¯ï¼ˆå®Œå…¨é€æ˜ï¼Œåªæœ‰è¾¹æ¡†ï¼‰
+        // 1. ÒÇ±íÅÌÍâÔ²»·£¨ÍêÈ«Í¸Ã÷£¬Ö»ÓĞ±ß¿ò£©
         if (scene->ngeom < scene->maxgeom) {
             mjvGeom* geom = scene->geoms + scene->ngeom;
 
-            // ä½¿ç”¨è–„åœ†ç¯ä½œä¸ºè¾¹æ¡†
+            // Ê¹ÓÃ±¡Ô²»·×÷Îª±ß¿ò
             geom->type = mjGEOM_CYLINDER;
             geom->size[0] = geom->size[1] = 0.15f * gauge_scale;
             geom->size[2] = 0.02f * gauge_scale;
-            // éå¸¸è–„ï¼Œçœ‹èµ·æ¥åƒçº¿
+            // ·Ç³£±¡£¬¿´ÆğÀ´ÏñÏß
 
             geom->pos[0] = dashboard_pos[0];
             geom->pos[1] = dashboard_pos[1];
             geom->pos[2] = dashboard_pos[2];
 
-            // åº”ç”¨ä»ªè¡¨ç›˜æ—‹è½¬çŸ©é˜µ
+            // Ó¦ÓÃÒÇ±íÅÌĞı×ª¾ØÕó
             for (int j = 0; j < 9; j++) {
                 geom->mat[j] = static_cast<float>(dashboard_rot_mat[j]);
             }
 
-            // æ”¹ä¸ºé»„è‰²ï¼ˆé‡‘è‰²è¾¹æ¡†ï¼‰
+            // ¸ÄÎª»ÆÉ«£¨½ğÉ«±ß¿ò£©
             geom->rgba[0] = 1.0f;
             geom->rgba[1] = 0.85f;
             geom->rgba[2] = 0.7f;
-            geom->rgba[3] = 0.8f;  // ç¨å¾®é€æ˜
+            geom->rgba[3] = 0.8f;  // ÉÔÎ¢Í¸Ã÷
             scene->ngeom++;
         }
 
-        // 2. æ·»åŠ åˆ»åº¦çº¿ï¼ˆ0~10 å…¨åˆ»åº¦ï¼‰
+        // 2. Ìí¼Ó¿Ì¶ÈÏß£¨0~10 È«¿Ì¶È£©
         const int kMaxTick = 10;
         const int kTickCount = kMaxTick + 1;
 
@@ -358,11 +294,11 @@ namespace mjpc {
 
             int tick_value = i;
 
-            // è§’åº¦ï¼š0 åœ¨å·¦(180Â°)ï¼Œ10 åœ¨å³(0Â°)
+            // ½Ç¶È£º0 ÔÚ×ó(180¡ã)£¬10 ÔÚÓÒ(0¡ã)
             float tick_angle_deg = 180.0f - (180.0f * tick_value / kMaxTick);
             float rad_tick_angle = tick_angle_deg * 3.14159f / 180.0f;
 
-            // â€”â€”ã€æ–°å¢ã€‘åˆ»åº¦é•¿åº¦ï¼ˆå¿…é¡»æœ‰ï¼‰â€”â€”
+            // ¡ª¡ª¡¾ĞÂÔö¡¿¿Ì¶È³¤¶È£¨±ØĞëÓĞ£©¡ª¡ª
             float full_len = ((tick_value % 5 == 0) ? 0.030f : 0.020f) * gauge_scale;
             float half_len = full_len * 0.5f;
 
@@ -386,7 +322,7 @@ namespace mjpc {
             geom->pos[1] = tick_y;
             geom->pos[2] = tick_z;
 
-            // ---- åˆ»åº¦æŒ‡å‘åœ†å¿ƒ ----
+            // ---- ¿Ì¶ÈÖ¸ÏòÔ²ĞÄ ----
             double tick_rot_angle = tick_angle_deg - 90.0;
             double rad_tick_rot = tick_rot_angle * 3.14159 / 180.0;
             double cos_t = cos(rad_tick_rot);
@@ -418,7 +354,7 @@ namespace mjpc {
             geom->rgba[3] = 0.9f;
             scene->ngeom++;
 
-            // ---- æ•°å­—æ ‡ç­¾ ----
+            // ---- Êı×Ö±êÇ© ----
             if (scene->ngeom >= scene->maxgeom) break;
 
             mjvGeom* label_geom = scene->geoms + scene->ngeom;
@@ -445,23 +381,23 @@ namespace mjpc {
             scene->ngeom++;
         }
 
-        // 3. é€Ÿåº¦æŒ‡é’ˆï¼ˆæ”¹ä¸ºçº¢è‰²ï¼‰
+        // 3. ËÙ¶ÈÖ¸Õë£¨¸ÄÎªºìÉ«£©
         if (scene->ngeom < scene->maxgeom) {
             mjvGeom* geom = scene->geoms + scene->ngeom;
             geom->type = mjGEOM_BOX;
             geom->size[0] = 0.004f * gauge_scale;
             geom->size[1] = 0.055f * gauge_scale;
             geom->size[2] = 0.003f * gauge_scale;
-            // æŒ‡é’ˆåšåº¦
+            // Ö¸Õëºñ¶È
 
-          // è®¡ç®—æŒ‡é’ˆè§’åº¦ï¼šç”±äºä»ªè¡¨ç›˜å·²é¡ºæ—¶é’ˆæ—‹è½¬90åº¦ï¼Œæˆ‘ä»¬éœ€è¦è°ƒæ•´è§’åº¦èŒƒå›´
-          // åŸæ¥0åœ¨æœ€ä¸Šæ–¹ï¼ˆ-90åº¦ï¼‰ï¼Œé¡ºæ—¶é’ˆæ—‹è½¬90åº¦åï¼Œ0åº”è¯¥åœ¨å·¦æ–¹ï¼ˆ180åº¦ï¼‰
-          // åŸæ¥çš„-90åº¦åˆ°90åº¦èŒƒå›´ï¼ˆ180åº¦ï¼‰å˜ä¸º180åº¦åˆ°0åº¦èŒƒå›´
-            float angle = 180.0f - 180.0f * speed_ratio;  // 180åº¦åˆ°0åº¦èŒƒå›´
+          // ¼ÆËãÖ¸Õë½Ç¶È£ºÓÉÓÚÒÇ±íÅÌÒÑË³Ê±ÕëĞı×ª90¶È£¬ÎÒÃÇĞèÒªµ÷Õû½Ç¶È·¶Î§
+          // Ô­À´0ÔÚ×îÉÏ·½£¨-90¶È£©£¬Ë³Ê±ÕëĞı×ª90¶Èºó£¬0Ó¦¸ÃÔÚ×ó·½£¨180¶È£©
+          // Ô­À´µÄ-90¶Èµ½90¶È·¶Î§£¨180¶È£©±äÎª180¶Èµ½0¶È·¶Î§
+            float angle = 180.0f - 180.0f * speed_ratio;  // 180¶Èµ½0¶È·¶Î§
             float rad_angle = angle * 3.14159f / 180.0f;
 
-            // æŒ‡é’ˆä½ç½®ï¼ˆä»åœ†å¿ƒå‡ºå‘ï¼‰
-                // æŒ‡é’ˆåŠé•¿åº¦(å†çŸ­ä¸€åŠ)
+            // Ö¸ÕëÎ»ÖÃ£¨´ÓÔ²ĞÄ³ö·¢£©
+                // Ö¸Õë°ë³¤¶È(ÔÙ¶ÌÒ»°ë)
             float pointer_y = dashboard_pos[1] - 0.0275f * gauge_scale * cos(rad_angle);
             float pointer_z = dashboard_pos[2] + 0.0275f * gauge_scale * sin(rad_angle);
 
@@ -471,9 +407,9 @@ namespace mjpc {
             geom->pos[1] = pointer_y;
             geom->pos[2] = pointer_z;
 
-            // æŒ‡é’ˆæ—‹è½¬ï¼šéœ€è¦ç»•ä»ªè¡¨ç›˜æ³•çº¿æ—‹è½¬ï¼Œç„¶åå†åº”ç”¨ä»ªè¡¨ç›˜çš„æ—‹è½¬
-            // é¦–å…ˆï¼Œç»•Zè½´æ—‹è½¬åˆ°æŒ‡é’ˆè§’åº¦ï¼ˆç›¸å¯¹äºä»ªè¡¨ç›˜ï¼‰
-            double pointer_angle = angle - 90.0;  // è°ƒæ•´æ–¹å‘ï¼Œä½¿æŒ‡é’ˆæŒ‡å‘æ­£ç¡®
+            // Ö¸ÕëĞı×ª£ºĞèÒªÈÆÒÇ±íÅÌ·¨ÏßĞı×ª£¬È»ºóÔÙÓ¦ÓÃÒÇ±íÅÌµÄĞı×ª
+            // Ê×ÏÈ£¬ÈÆZÖáĞı×ªµ½Ö¸Õë½Ç¶È£¨Ïà¶ÔÓÚÒÇ±íÅÌ£©
+            double pointer_angle = angle - 90.0;  // µ÷Õû·½Ïò£¬Ê¹Ö¸ÕëÖ¸ÏòÕıÈ·
             double rad_pointer_angle = pointer_angle * 3.14159 / 180.0;
             double cos_p = cos(rad_pointer_angle);
             double sin_p = sin(rad_pointer_angle);
@@ -483,7 +419,7 @@ namespace mjpc {
               0,      0,     1
             };
 
-            // ç»„åˆæ—‹è½¬ï¼šå…ˆç»•Zè½´æ—‹è½¬åˆ°æŒ‡é’ˆè§’åº¦ï¼Œå†åº”ç”¨ä»ªè¡¨ç›˜æ—‹è½¬
+            // ×éºÏĞı×ª£ºÏÈÈÆZÖáĞı×ªµ½Ö¸Õë½Ç¶È£¬ÔÙÓ¦ÓÃÒÇ±íÅÌĞı×ª
             double temp_mat[9];
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
@@ -498,15 +434,15 @@ namespace mjpc {
                 geom->mat[i] = static_cast<float>(temp_mat[i]);
             }
 
-            // ä¿æŒçº¢è‰²ï¼ˆå½¢æˆé»„çº¢å¯¹æ¯”ï¼‰
-            geom->rgba[0] = 1.0f;  // çº¢è‰²
+            // ±£³ÖºìÉ«£¨ĞÎ³É»Æºì¶Ô±È£©
+            geom->rgba[0] = 1.0f;  // ºìÉ«
             geom->rgba[1] = 0.0f;
             geom->rgba[2] = 0.0f;
             geom->rgba[3] = 1.0f;
             scene->ngeom++;
         }
 
-        // 4. ä¸­å¿ƒå›ºå®šç‚¹ï¼ˆå°åœ†ç‚¹ï¼‰
+        // 4. ÖĞĞÄ¹Ì¶¨µã£¨Ğ¡Ô²µã£©
         if (scene->ngeom < scene->maxgeom) {
             mjvGeom* geom = scene->geoms + scene->ngeom;
             geom->type = mjGEOM_SPHERE;
@@ -515,27 +451,27 @@ namespace mjpc {
             geom->pos[0] = dashboard_pos[0];
             geom->pos[1] = dashboard_pos[1];
             geom->pos[2] = dashboard_pos[2];
-            // åº”ç”¨ä»ªè¡¨ç›˜æ—‹è½¬çŸ©é˜µ
+            // Ó¦ÓÃÒÇ±íÅÌĞı×ª¾ØÕó
             for (int j = 0; j < 9; j++) {
                 geom->mat[j] = static_cast<float>(dashboard_rot_mat[j]);
             }
-            geom->rgba[0] = 1.0f;  // é»„è‰²ä¸­å¿ƒç‚¹
+            geom->rgba[0] = 1.0f;  // »ÆÉ«ÖĞĞÄµã
             geom->rgba[1] = 0.8f;
             geom->rgba[2] = 0.0f;
             geom->rgba[3] = 1.0f;
             scene->ngeom++;
         }
 
-        // 5. æ•°å­—é€Ÿåº¦æ˜¾ç¤ºï¼ˆåœ¨ä»ªè¡¨ç›˜ä¸­å¤®åä¸Šï¼‰
+        // 5. Êı×ÖËÙ¶ÈÏÔÊ¾£¨ÔÚÒÇ±íÅÌÖĞÑëÆ«ÉÏ£©
         if (scene->ngeom < scene->maxgeom) {
             mjvGeom* geom = scene->geoms + scene->ngeom;
             geom->type = mjGEOM_LABEL;
             geom->size[0] = geom->size[1] = geom->size[2] = 0.08f;
             geom->pos[0] = dashboard_pos[0];
             geom->pos[1] = dashboard_pos[1];
-            geom->pos[2] = dashboard_pos[2] + 0.02f;  // ä»ªè¡¨ç›˜ä¸­å¤®åä¸Š
+            geom->pos[2] = dashboard_pos[2] + 0.02f;  // ÒÇ±íÅÌÖĞÑëÆ«ÉÏ
 
-            geom->rgba[0] = 1.0f;  // æµ…ç°è‰²æ•°å­—
+            geom->rgba[0] = 1.0f;  // Ç³»ÒÉ«Êı×Ö
             geom->rgba[1] = 1.0f;
             geom->rgba[2] = 0.0f;
             geom->rgba[3] = 1.0f;
@@ -547,16 +483,16 @@ namespace mjpc {
             scene->ngeom++;
         }
 
-        // 6. æ·»åŠ "km/h"å•ä½æ ‡ç­¾ï¼ˆåœ¨æ•°å­—ä¸‹æ–¹ï¼‰
+        // 6. Ìí¼Ó"km/h"µ¥Î»±êÇ©£¨ÔÚÊı×ÖÏÂ·½£©
         if (scene->ngeom < scene->maxgeom) {
             mjvGeom* geom = scene->geoms + scene->ngeom;
             geom->type = mjGEOM_LABEL;
             geom->size[0] = geom->size[1] = geom->size[2] = 0.05f;
             geom->pos[0] = dashboard_pos[0];
             geom->pos[1] = dashboard_pos[1];
-            geom->pos[2] = dashboard_pos[2] - 0.06f;  // æ•°å­—ä¸‹æ–¹
+            geom->pos[2] = dashboard_pos[2] - 0.06f;  // Êı×ÖÏÂ·½
 
-            geom->rgba[0] = 1.0f;  // æµ…ç°è‰²
+            geom->rgba[0] = 1.0f;  // Ç³»ÒÉ«
             geom->rgba[1] = 1.0f;
             geom->rgba[2] = 0.0f;
             geom->rgba[3] = 1.0f;
@@ -565,58 +501,6 @@ namespace mjpc {
             geom->label[sizeof(geom->label) - 1] = '\0';
             scene->ngeom++;
         }
-        namespace {
-
-            constexpr int   EXTRA_RPM_BAR_LEN = 30;
-            constexpr double EXTRA_MAX_SPEED = 5.0;
-
-            inline void PrintCarStatus(
-                const mjModel* model,
-                const mjData* data) {
-
-                // ä½ç½®
-                double px = data->qpos[0];
-                double py = data->qpos[1];
-
-                // é€Ÿåº¦
-                double vx = data->qvel[0];
-                double vy = data->qvel[1];
-
-                // åŠ é€Ÿåº¦
-                double ax = data->qacc[0];
-                double ay = data->qacc[1];
-
-                // è½¦ä½“çº¿é€Ÿåº¦
-                double* vel = SensorByName(model, data, "car_velocity");
-                double speed = vel ? mju_norm3(vel) : 0.0;
-
-                // RPM æ¡
-                double ratio = speed / EXTRA_MAX_SPEED;
-                ratio = std::min(1.0, std::max(0.0, ratio));
-                int filled = static_cast<int>(ratio * EXTRA_RPM_BAR_LEN);
-
-                char bar[EXTRA_RPM_BAR_LEN + 1];
-                for (int i = 0; i < EXTRA_RPM_BAR_LEN; ++i)
-                    bar[i] = (i < filled) ? '#' : ' ';
-                bar[EXTRA_RPM_BAR_LEN] = '\0';
-
-                // æ²¹è€—ï¼ˆç‹¬ç«‹ç»Ÿè®¡ï¼Œä¸å¹²æ‰°åŸå˜é‡ï¼‰
-                static double fuel_used = 0.0;
-                constexpr double fuel_cap = 100.0;
-                fuel_used += std::abs(data->ctrl[0]) * model->opt.timestep * 0.2;
-                fuel_used = std::min(fuel_used, fuel_cap);
-
-                double fuel_pct = (fuel_cap - fuel_used) / fuel_cap * 100.0;
-
-                printf(
-                    "\r[EXTRA] Pos(%.2f %.2f) | Vel(%.2f %.2f) | "
-                    "Acc(%.2f %.2f) | Fuel %3.0f%% | RPM [%s]",
-                    px, py, vx, vy, ax, ay, fuel_pct, bar);
-
-                fflush(stdout);
-            }
-
-        }
     }
-
+  
 }  // namespace mjpc
