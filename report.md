@@ -104,6 +104,10 @@ cmake --build . -j4
 
 实验中使用 MJCF（XML）格式描述车辆模型。模型主要由车身和车轮组成，并通过自由关节实现车辆整体运动。虽然模型结构相对简单，但能够满足实验对速度和位置数据的需求。
 
+![5](C:\Users\lengyou\Desktop\新建文件夹 (9)\新建文件夹\screenhosts\5.png)
+
+![6](C:\Users\lengyou\Desktop\新建文件夹 (9)\新建文件夹\screenhosts\6.png)
+
 ---
 
 ### 5.2 场景运行结果
@@ -130,9 +134,9 @@ cmake --build . -j4
 
 * 数据实时更新
 
-  ![image-20251225142605476](C:\Users\lengyou\AppData\Roaming\Typora\typora-user-images\image-20251225142605476.png)
+  
 
-  ![image-20251225142749940](C:\Users\lengyou\AppData\Roaming\Typora\typora-user-images\image-20251225142749940.png)
+  
 
 ---
 
