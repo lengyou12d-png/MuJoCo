@@ -1,0 +1,145 @@
+[  0%] Built target spinlock_wait
+[  1%] Built target log_severity
+[  1%] Built target raw_logging_internal
+[  2%] Built target base
+[  2%] Built target threadpool
+[  2%] Copying tasks into binary directory
+[  2%] Built target copy_resources
+[  2%] Copying Menagerie and dm_control assets into binary directory
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/acrobot/acrobot_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/acrobot/acrobot.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/cartpole/cartpole_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/cartpole/cartpole.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/humanoid/humanoid_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/humanoid/humanoid.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/particle/particle_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/particle/particle.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/swimmer/swimmer_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/swimmer/swimmer.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/walker/walker_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/walker/walker.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/allegro/right_hand_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/allegro/right_hand.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/panda/panda_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/panda/panda.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/quadruped/a1_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/quadruped/a1.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/quadrotor/quadrotor_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/quadrotor/quadrotor.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/common_assets/cube_modified_shadow_reorient.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/common_assets/reorientation_cube.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/rubik/cube_3x3x3_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/rubik/cube_3x3x3.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/rubik/transition_model.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/rubik/cube_3x3x3.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/aloha_cartesian.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/aloha.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/mjx_aloha.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/aloha.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/mjx_scene.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/scene.xml)
+Hunk #1 succeeded at 1 with fuzz 1.
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/mjx_filtered_cartesian_actuators.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/bimanual/filtered_cartesian_actuators.xml)
+patching file /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/op3/op3_modified.xml (read from /home/shadi/mujoco_projects/mujoco_mpc/build/mjpc/tasks/op3/op3.xml)
+[  2%] Built target copy_model_resources
+[  2%] Built target lodepng
+[  4%] Built target ccd
+[  8%] Built target qhullstatic_r
+[  8%] Built target tinyxml2
+[ 10%] Built target tinyobjloader
+[ 23%] Built target mujoco
+[ 23%] Built target platform_ui_adapter
+[ 28%] Built target glfw
+[ 28%] Built target malloc_internal
+[ 28%] Built target throw_delegate
+[ 28%] Built target strerror
+[ 29%] Built target time_zone
+[ 31%] Built target debugging_internal
+[ 32%] Built target stacktrace
+[ 34%] Built target strings_internal
+[ 34%] Built target demangle_internal
+[ 34%] Built target int128
+[ 34%] Built target string_view
+[ 37%] Built target strings
+[ 37%] Built target symbolize
+[ 38%] Built target exponential_biased
+[ 40%] Built target graphcycles_internal
+[ 41%] Built target civil_time
+[ 43%] Built target time
+[ 43%] Built target kernel_timeout_internal
+[ 46%] Built target synchronization
+[ 47%] Built target hashtablez_sampler
+[ 49%] Built target bad_variant_access
+[ 49%] Built target city
+[ 49%] Built target low_level_hash
+[ 49%] Built target bad_optional_access
+[ 49%] Built target hash
+[ 50%] Built target raw_hash_set
+[ 50%] Built target crc_cpu_detect
+[ 52%] Built target crc_internal
+[ 53%] Built target str_format_internal
+[ 55%] Built target crc32c
+[ 55%] Built target crc_cord_state
+[ 55%] Built target examine_stack
+[ 55%] Built target log_internal_globals
+[ 55%] Built target log_internal_format
+[ 55%] Built target log_internal_proto
+[ 55%] Built target log_globals
+[ 55%] Built target log_entry
+[ 55%] Built target log_sink
+[ 56%] Built target log_internal_log_sink_set
+[ 56%] Built target log_internal_nullguard
+[ 56%] Built target log_internal_message
+[ 56%] Built target log_internal_check_op
+[ 58%] Built target log_internal_conditions
+[ 58%] Built target random_distributions
+[ 58%] Built target random_seed_gen_exception
+[ 59%] Built target random_internal_seed_material
+[ 59%] Built target random_internal_platform
+[ 59%] Built target random_internal_randen_hwaes_impl
+[ 59%] Built target random_internal_randen_slow
+[ 59%] Built target random_internal_randen_hwaes
+[ 61%] Built target random_internal_randen
+[ 61%] Built target random_internal_pool_urbg
+[ 61%] Built target random_seed_sequences
+[ 64%] Built target cord_internal
+[ 64%] Built target cordz_functions
+[ 64%] Built target cordz_handle
+[ 64%] Built target cordz_info
+[ 64%] Built target cord
+[ 77%] Built target libmjpc
+[ 77%] Built target flags_program_name
+[ 77%] Built target flags_config
+[ 79%] Built target flags_marshalling
+[ 80%] Built target flags_commandlineflag_internal
+[ 80%] Built target flags_commandlineflag
+[ 80%] Built target flags_private_handle_accessor
+[ 82%] Built target flags_reflection
+[ 82%] Built target flags_internal
+[ 82%] Built target flags
+[ 82%] Built target flags_usage_internal
+[ 82%] Built target flags_usage
+[ 82%] Built target flags_parse
+[ 82%] Built target mjpc
+[ 82%] Built target libtestspeed
+[ 82%] Built target testspeed
+[ 83%] Built target load
+[ 85%] Built target lqr
+[ 86%] Built target simulation
+[ 86%] Built target gtest
+[ 86%] Built target gmock
+[ 86%] Built target gtest_main
+[ 86%] Built target agent_test
+[ 88%] Built target agent_utilities_test
+[ 88%] Built target cost_derivatives_test
+[ 89%] Built target norm_test
+[ 91%] Built target rollout_test
+[ 92%] Built target threadpool_test
+[ 92%] Built target trajectory_test
+[ 94%] Built target direct_force_test
+[ 94%] Built target direct_parameter_test
+[ 94%] Built target direct_optimize_test
+[ 94%] Built target direct_sensor_test
+[ 95%] Built target direct_trajectory_test
+[ 95%] Built target direct_utilities_test
+[ 95%] Built target batch_filter_test
+[ 95%] Built target batch_prior_test
+[ 97%] Built target kalman_test
+[ 98%] Built target unscented_test
+[ 98%] Built target gradient_planner_test
+[ 98%] Built target gradient_test
+[100%] Built target zero_test
+[100%] Built target linear_test
+[100%] Built target cubic_test
+[100%] Built target ilqg_test
+[100%] Built target backward_pass_test
+[100%] Built target robust_planner_test
+[100%] Built target sampling_planner_test
+[100%] Built target spline_test
+[100%] Built target state_test
+[100%] Built target task_test
+[100%] Built target utilities_test
